@@ -21,7 +21,6 @@
 <script>
 	import AppIdea from '@/components/AppIdea.vue';
 	import AddIdea from '@/components/AddIdea.vue';
-	import seed from '@/seed.json';
 	import { ref } from 'vue';
 	import { auth, db, firebase } from '@/firebase.js';
 
@@ -29,12 +28,32 @@
 		name: "App",
 		
 		setup() {
-			const ideas = ref(seed.ideas);
+			const ideas = ref([]);
 
 			let user = ref(null);
 
 			// Obtengo información sobre la autenticación
 			auth.onAuthStateChanged(async auth => (user.value = auth ? auth : null));
+
+			db.collection('ideas').onSnapshot(
+				snapshot => {
+					const newIdeas = [];
+
+					snapshot.docs.forEach(doc => {
+						let { name, use, userName, votes } = doc.data();
+
+						let id = doc.id;
+
+						newIdeas.push({
+							name, use, userName, votes, id
+						});
+					});
+
+					ideas.value = newIdeas;
+				},
+
+				error => console.log(error)
+			);
 
 			const doLogin = async () => {
 				// Cargamos el proveedor con Google
